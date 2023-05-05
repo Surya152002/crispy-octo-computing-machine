@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Bluetooth Message Sender</title>
+    <script>
+      function sendMessage() {
+        var message = document.getElementById("message").value;
+        if (message.length == 0) {
+          alert("Please enter a message to send");
+          return;
+        }
+
+        var device = document.getElementById("device").value;
+        if (device.length == 0) {
+          alert("Please select a device to send the message to");
+          return;
+        }
+
+        navigator.bluetooth
+          .requestDevice({
+            filters: [{ services: [0xFFE0] }],
+          })
+          .then(function (device) {
+            console.log("Device found: " + device.name);
+            return device.gatt.connect();
+          })
+          .then(function (server) {
+            console.log("Connected to GATT server");
+            return server.getPrimaryService(0xFFE0);
+          })
+          .then(function (service) {
+            console.log("Found service");
+            return service.getCharacteristic(0xFFE1);
+          })
+          .then(function (characteristic) {
+            console.log("Found characteristic");
+            var encoder = new TextEncoder();
+            var messageBytes = encoder.encode(message);
+            return characteristic.writeValue(messageBytes);
+          })
+          .then(function () {
+            console.log("Message sent");
+            alert("Message sent successfully");
+          })
+          .catch(function (error) {
+            console.error(error);
+            alert("Error: " + error);
+          });
+      }
+    </script>
+  </head>
+  <body>
+    <h1>Bluetooth Message Sender</h1>
+    <form>
+      <label for="message">Message:</label>
+      <input type="text" id="message" name="message" /><br />
+      <label for="device">Device:</label>
+      <select id="device" name="device">
+        <option value="">-- Select a device --</option>
+        <option value="device1">Device 1</option>
+        <option value="device2">Device 2</option>
+      </select>
+      <br /><br />
+      <input type="button" value="Send" onclick="sendMessage()" />
+    </form>
+  </body>
+</html>
